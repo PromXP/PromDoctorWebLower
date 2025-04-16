@@ -541,7 +541,7 @@ const page = ({ patient, scoreGroups, userData }) => {
     if (!scoreGroups) return [];
     return Object.entries(scoreGroups)
       .filter(([key]) =>
-        key.startsWith("Knee Injury and Ostheoarthritis Outcome Score (KOOS)")
+        key.startsWith("Knee Injury and Ostheoarthritis Outcome Score, Joint Replacement (KOOS, JR)")
       )
       .map(([key, values]) => {
         const label = key.split("|")[1];
@@ -550,7 +550,7 @@ const page = ({ patient, scoreGroups, userData }) => {
 
         const patientValue = patient?.questionnaire_scores?.find(
           (s) =>
-            s.name === "Knee Injury and Ostheoarthritis Outcome Score (KOOS)" &&
+            s.name === "Knee Injury and Ostheoarthritis Outcome Score, Joint Replacement (KOOS, JR)" &&
             normalizeLabel(s.period) === name
         );
 
@@ -569,6 +569,7 @@ const page = ({ patient, scoreGroups, userData }) => {
   const koosDatabox = useBoxPlot(
     (koosBoxPlotData ?? []).map((item, index) => {
       const stats = computeBoxStats(item.boxData, item.dotValue);
+      console.log("KOOS PLOT DATA",koosBoxPlotData);
       return {
         name: item.name,
         x: index * 10,
@@ -608,6 +609,8 @@ const page = ({ patient, scoreGroups, userData }) => {
   const kssDatabox = useBoxPlot(
     (kssBoxPlotData ?? []).map((item, index) => {
       const stats = computeBoxStats(item.boxData, item.dotValue);
+      console.log("KSS PLOT DATA",kssBoxPlotData);
+
       return {
         name: item.name,
         x: index * 10,
@@ -1664,14 +1667,14 @@ const page = ({ patient, scoreGroups, userData }) => {
 
                 {/* Median Line */}
                 <Scatter
-                  data={databox}
+                  data={sf12Databox}
                   shape={(props) => <HorizonBar {...props} dataKey="_median" />}
                   dataKey="_median"
                 />
 
                 {/* Min Line */}
                 <Scatter
-                  data={databox}
+                  data={sf12Databox}
                   shape={(props) => (
                     <HorizonBar {...props} dataKey="_min" stroke="#4A3AFF" />
                   )}
@@ -1680,14 +1683,14 @@ const page = ({ patient, scoreGroups, userData }) => {
 
                 {/* Max Line */}
                 <Scatter
-                  data={databox}
+                  data={sf12Databox}
                   shape={(props) => <HorizonBar {...props} dataKey="_max" />}
                   dataKey="_max"
                 />
 
                 <ZAxis type="number" dataKey="size" range={[0, 250]} />
                 <Scatter
-                  data={databox.filter(
+                  data={sf12Databox.filter(
                     (item) =>
                       item.average !== undefined &&
                       item.average !== null &&
@@ -1934,6 +1937,7 @@ const page = ({ patient, scoreGroups, userData }) => {
                   }}
                   axisLine={{ stroke: "#615E83" }}
                   tickLine={{ stroke: "#615E83" }}
+                  
                 />
 
                 <YAxis

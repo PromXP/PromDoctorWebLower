@@ -209,7 +209,6 @@ const page = ({ patient, scoreGroups, userData }) => {
     }
   };
 
-
   const saveDateTime = async () => {
     const finalDateTime = `${selectedDate} ${selectedTime}`;
     console.log("Saved Date & Time:", finalDateTime);
@@ -242,16 +241,13 @@ const page = ({ patient, scoreGroups, userData }) => {
     };
 
     try {
-      const response = await fetch(
-        API_URL+"update-surgery-schedule",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(API_URL + "update-surgery-schedule", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -365,9 +361,9 @@ const page = ({ patient, scoreGroups, userData }) => {
       (q) =>
         q.name.toLowerCase().includes("short form") &&
         q.name.toLowerCase().includes("12") &&
-        (q.period?.toLowerCase() === period.toLowerCase())
+        q.period?.toLowerCase() === period.toLowerCase()
     );
-  
+
     return {
       name: period,
       x: index,
@@ -375,34 +371,29 @@ const page = ({ patient, scoreGroups, userData }) => {
       mScore: match?.score?.[2] ?? null,
     };
   });
-  
-  
 
   // Extract name for transformedData (could be expanded with additional properties if needed)
   const transformedData = sf12Data.map(({ name }) => ({ name }));
 
-
   // Dynamic PCS Data - Filtering out null pScores and setting error to [10, 10]
   const dataPCS = sf12Data
-  .filter((d) => d.pScore !== null)
-  .map((d) => ({
-    x: d.x - 0.1,
-    y: d.pScore,
-    error: [10, 10],
-  }));
+    .filter((d) => d.pScore !== null)
+    .map((d) => ({
+      x: d.x - 0.1,
+      y: d.pScore,
+      error: [10, 10],
+    }));
 
-const dataMCS = sf12Data
-  .filter((d) => d.mScore !== null)
-  .map((d) => ({
-    x: d.x + 0.1,
-    y: d.mScore,
-    error: [10, 10],
-  }));
-
+  const dataMCS = sf12Data
+    .filter((d) => d.mScore !== null)
+    .map((d) => ({
+      x: d.x + 0.1,
+      y: d.mScore,
+      error: [10, 10],
+    }));
 
   // Finding the surgery index, if available
   const surgeryIndex = periodOrder.indexOf("SURGERY");
-
 
   const TIMEPOINT_ORDER = [
     "PREOP",
@@ -412,7 +403,7 @@ const dataMCS = sf12Data
     "1 YEAR",
     "2 YEARS",
   ];
-  
+
   const normalizeLabel = (label) => {
     const map = {
       "PRE OP": "PREOP",
@@ -422,11 +413,11 @@ const dataMCS = sf12Data
       "1Y": "1 YEAR",
       "2Y": "2 YEARS",
     };
-  
+
     const normalizedLabel = label.trim().toUpperCase();
     return map[normalizedLabel] || normalizedLabel;
   };
-  
+
   const parseValues = (arr) => {
     if (!arr || arr.length === 0) return null;
     return arr
@@ -435,65 +426,65 @@ const dataMCS = sf12Data
       .map((v) => parseFloat(v))
       .filter((v) => !isNaN(v));
   };
-  
+
   const boxPlotData = useMemo(() => {
     if (!scoreGroups) return [];
-  
+
     let data = Object.entries(scoreGroups)
       .filter(([key]) => key.startsWith("Oxford Knee Score (OKS)"))
       .map(([key, values]) => {
         const label = key.split("|")[1];
         const name = normalizeLabel(label);
         const boxData = parseValues(values);
-  
+
         const patientValue = patient?.questionnaire_scores?.find(
           (s) =>
             s.name === "Oxford Knee Score (OKS)" &&
             normalizeLabel(s.period) === name
         );
-  
+
         const dotValue = patientValue?.score?.[0] ?? null;
-  
+
         return {
           name,
           boxData,
           dotValue,
         };
       });
-  
+
     // Fill in missing timepoints
     data = data.concat(
-      TIMEPOINT_ORDER
-        .filter((timepoint) => !data.some((item) => item.name === timepoint))
-        .map((timepoint) => ({
-          name: timepoint,
-          boxData: [],
-          dotValue: null,
-        }))
+      TIMEPOINT_ORDER.filter(
+        (timepoint) => !data.some((item) => item.name === timepoint)
+      ).map((timepoint) => ({
+        name: timepoint,
+        boxData: [],
+        dotValue: null,
+      }))
     );
-  
+
     // Sort by TIMEPOINT_ORDER
     data.sort(
       (a, b) =>
         TIMEPOINT_ORDER.indexOf(a.name) - TIMEPOINT_ORDER.indexOf(b.name)
     );
-  
+
     return data;
   }, [scoreGroups, patient]);
-  
+
   const databox = useBoxPlot(
     (boxPlotData ?? []).map((item, index) => {
       const stats = computeBoxStats(item.boxData, item.dotValue);
-  
+
       const isValidDot =
         stats.Patient !== undefined &&
         !isNaN(stats.Patient) &&
         stats.Patient < 100;
-  
+
       if (!isValidDot) {
         stats.Patient = undefined;
       }
-  
+
       return {
         name: item.name,
         x: index * 10,
@@ -501,64 +492,66 @@ const dataMCS = sf12Data
       };
     })
   );
-  
 
   // SF-12 data processing
   const sf12BoxPlotData = useMemo(() => {
     if (!scoreGroups) return [];
-  
+
     let data = Object.entries(scoreGroups)
       .filter(([key]) => key.startsWith("Short Form - 12 (SF-12)"))
       .map(([key, values]) => {
         const label = key.split("|")[1];
         const name = normalizeLabel(label);
         const boxData = parseValues(values);
-  
+
         const patientValue = patient?.questionnaire_scores?.find(
           (s) =>
             s.name === "Short Form - 12 (SF-12)" &&
             normalizeLabel(s.period) === name
         );
-  
+
         const dotValue = patientValue?.score?.[0] ?? null;
-  
+
         return {
           name,
           boxData,
           dotValue,
         };
       });
-  
+
     // Fill in any missing timepoints with empty data
     data = data.concat(
-      TIMEPOINT_ORDER
-        .filter((timepoint) => !data.some((item) => item.name === timepoint))
-        .map((timepoint) => ({
-          name: timepoint,
-          boxData: [],
-          dotValue: null,
-        }))
+      TIMEPOINT_ORDER.filter(
+        (timepoint) => !data.some((item) => item.name === timepoint)
+      ).map((timepoint) => ({
+        name: timepoint,
+        boxData: [],
+        dotValue: null,
+      }))
     );
-  
+
     // Sort the data based on the TIMEPOINT_ORDER
-    data.sort((a, b) => TIMEPOINT_ORDER.indexOf(a.name) - TIMEPOINT_ORDER.indexOf(b.name));
-  
+    data.sort(
+      (a, b) =>
+        TIMEPOINT_ORDER.indexOf(a.name) - TIMEPOINT_ORDER.indexOf(b.name)
+    );
+
     return data;
   }, [scoreGroups, patient]);
-  
+
   const sf12Databox = useBoxPlot(
     (sf12BoxPlotData ?? []).map((item, index) => {
       const stats = computeBoxStats(item.boxData, item.dotValue);
-  
+
       const isValidDot =
         stats.Patient !== undefined &&
         !isNaN(stats.Patient) &&
-        stats.Patient < 100;
-  
+        stats.Patient <= 100;
+
       if (!isValidDot) {
         stats.Patient = undefined; // strip rogue dot
       }
-  
+
       return {
         name: item.name,
         x: index * 10,
@@ -566,132 +559,71 @@ const dataMCS = sf12Data
       };
     })
   );
-  
 
   // KOOS data
   const koosBoxPlotData = useMemo(() => {
     if (!scoreGroups) return [];
-  
+
     let data = Object.entries(scoreGroups)
       .filter(([key]) =>
-        key.startsWith("Knee Injury and Ostheoarthritis Outcome Score, Joint Replacement (KOOS, JR)")
+        key.startsWith(
+          "Knee Injury and Ostheoarthritis Outcome Score, Joint Replacement (KOOS, JR)"
+        )
       )
       .map(([key, values]) => {
         const label = key.split("|")[1];
         const name = normalizeLabel(label);
         const boxData = parseValues(values);
-  
+
         const patientValue = patient?.questionnaire_scores?.find(
           (s) =>
             s.name ===
               "Knee Injury and Ostheoarthritis Outcome Score, Joint Replacement (KOOS, JR)" &&
             normalizeLabel(s.period) === name
         );
-  
+
         const dotValue = patientValue?.score?.[0] ?? null;
-  
+
         return {
           name,
           boxData,
           dotValue,
         };
       });
-  
+
     // Add missing timepoints with default data
     data = data.concat(
-      TIMEPOINT_ORDER
-        .filter((timepoint) => !data.some((item) => item.name === timepoint))
-        .map((timepoint) => ({
-          name: timepoint,
-          boxData: [],
-          dotValue: null,
-        }))
+      TIMEPOINT_ORDER.filter(
+        (timepoint) => !data.some((item) => item.name === timepoint)
+      ).map((timepoint) => ({
+        name: timepoint,
+        boxData: [],
+        dotValue: null,
+      }))
     );
-  
+
     // Sort by TIMEPOINT_ORDER
-    data.sort((a, b) => TIMEPOINT_ORDER.indexOf(a.name) - TIMEPOINT_ORDER.indexOf(b.name));
-  
-    return data;
-  }, [scoreGroups, patient]);
-
-const koosDatabox = useBoxPlot(
-  (koosBoxPlotData ?? []).map((item, index) => {
-    const stats = computeBoxStats(item.boxData, item.dotValue);
-
-    const isValidDot =
-      stats.Patient !== undefined &&
-      !isNaN(stats.Patient) &&
-      stats.Patient < 100;
-
-    if (!isValidDot) {
-      stats.Patient = undefined;
-    }
-
-    return {
-      name: item.name,
-      x: index * 10,
-      ...stats,
-    };
-  })
-);
-
-
-  // KSS data
-  const kssBoxPlotData = useMemo(() => {
-    if (!scoreGroups) return [];
-  
-    let data = Object.entries(scoreGroups)
-      .filter(([key]) => key.startsWith("Knee Society Score (KSS)"))
-      .map(([key, values]) => {
-        const label = key.split("|")[1];
-        const name = normalizeLabel(label);
-        const boxData = parseValues(values);
-  
-        const patientValue = patient?.questionnaire_scores?.find(
-          (s) =>
-            s.name === "Knee Society Score (KSS)" &&
-            normalizeLabel(s.period) === name
-        );
-  
-        const dotValue = patientValue?.score?.[0] ?? null;
-  
-        return {
-          name,
-          boxData,
-          dotValue,
-        };
-      });
-  
-    // Fill in missing timepoints
-    data = data.concat(
-      TIMEPOINT_ORDER
-        .filter((timepoint) => !data.some((item) => item.name === timepoint))
-        .map((timepoint) => ({
-          name: timepoint,
-          boxData: [],
-          dotValue: null,
-        }))
+    data.sort(
+      (a, b) =>
+        TIMEPOINT_ORDER.indexOf(a.name) - TIMEPOINT_ORDER.indexOf(b.name)
     );
-  
-    // Sort by defined timepoint order
-    data.sort((a, b) => TIMEPOINT_ORDER.indexOf(a.name) - TIMEPOINT_ORDER.indexOf(b.name));
-  
+
     return data;
   }, [scoreGroups, patient]);
-  
-  const kssDatabox = useBoxPlot(
-    (kssBoxPlotData ?? []).map((item, index) => {
+
+  const koosDatabox = useBoxPlot(
+    (koosBoxPlotData ?? []).map((item, index) => {
       const stats = computeBoxStats(item.boxData, item.dotValue);
-  
+
       const isValidDot =
         stats.Patient !== undefined &&
         !isNaN(stats.Patient) &&
         stats.Patient < 100;
-  
+
       if (!isValidDot) {
         stats.Patient = undefined;
       }
-  
+
       return {
         name: item.name,
         x: index * 10,
@@ -699,48 +631,117 @@ const koosDatabox = useBoxPlot(
       };
     })
   );
-  
 
-  // FJS data
-  const fjsBoxPlotData = useMemo(() => {
+  // KSS data
+  const kssBoxPlotData = useMemo(() => {
     if (!scoreGroups) return [];
-  
+
     let data = Object.entries(scoreGroups)
-      .filter(([key]) => key.startsWith("Forgotten Joint Score (FJS)"))
+      .filter(([key]) => key.startsWith("Knee Society Score (KSS)"))
       .map(([key, values]) => {
         const label = key.split("|")[1];
         const name = normalizeLabel(label);
         const boxData = parseValues(values);
-  
+
         const patientValue = patient?.questionnaire_scores?.find(
           (s) =>
-            s.name === "Forgotten Joint Score (FJS)" &&
+            s.name === "Knee Society Score (KSS)" &&
             normalizeLabel(s.period) === name
         );
-  
+
         const dotValue = patientValue?.score?.[0] ?? null;
-  
+
         return {
           name,
           boxData,
           dotValue,
         };
       });
-  
+
+    // Fill in missing timepoints
+    data = data.concat(
+      TIMEPOINT_ORDER.filter(
+        (timepoint) => !data.some((item) => item.name === timepoint)
+      ).map((timepoint) => ({
+        name: timepoint,
+        boxData: [],
+        dotValue: null,
+      }))
+    );
+
+    // Sort by defined timepoint order
+    data.sort(
+      (a, b) =>
+        TIMEPOINT_ORDER.indexOf(a.name) - TIMEPOINT_ORDER.indexOf(b.name)
+    );
+
+    return data;
+  }, [scoreGroups, patient]);
+
+  const kssDatabox = useBoxPlot(
+    (kssBoxPlotData ?? []).map((item, index) => {
+      const stats = computeBoxStats(item.boxData, item.dotValue);
+
+      const isValidDot =
+        stats.Patient !== undefined &&
+        !isNaN(stats.Patient) &&
+        stats.Patient < 100;
+
+      if (!isValidDot) {
+        stats.Patient = undefined;
+      }
+
+      return {
+        name: item.name,
+        x: index * 10,
+        ...stats,
+      };
+    })
+  );
+
+  // FJS data
+  const fjsBoxPlotData = useMemo(() => {
+    if (!scoreGroups) return [];
+
+    let data = Object.entries(scoreGroups)
+      .filter(([key]) => key.startsWith("Forgotten Joint Score (FJS)"))
+      .map(([key, values]) => {
+        const label = key.split("|")[1];
+        const name = normalizeLabel(label);
+        const boxData = parseValues(values);
+
+        const patientValue = patient?.questionnaire_scores?.find(
+          (s) =>
+            s.name === "Forgotten Joint Score (FJS)" &&
+            normalizeLabel(s.period) === name
+        );
+
+        const dotValue = patientValue?.score?.[0] ?? null;
+
+        return {
+          name,
+          boxData,
+          dotValue,
+        };
+      });
+
     // Fill missing timepoints
     data = data.concat(
-      TIMEPOINT_ORDER
-        .filter((timepoint) => !data.some((item) => item.name === timepoint))
-        .map((timepoint) => ({
-          name: timepoint,
-          boxData: [],
-          dotValue: null,
-        }))
+      TIMEPOINT_ORDER.filter(
+        (timepoint) => !data.some((item) => item.name === timepoint)
+      ).map((timepoint) => ({
+        name: timepoint,
+        boxData: [],
+        dotValue: null,
+      }))
     );
-  
+
     // Sort by the explicit timepoint order
-    data.sort((a, b) => TIMEPOINT_ORDER.indexOf(a.name) - TIMEPOINT_ORDER.indexOf(b.name));
-  
+    data.sort(
+      (a, b) =>
+        TIMEPOINT_ORDER.indexOf(a.name) - TIMEPOINT_ORDER.indexOf(b.name)
+    );
+
     return data;
   }, [scoreGroups, patient]);
 
@@ -795,8 +796,6 @@ const koosDatabox = useBoxPlot(
   // console.log("Box plot:", JSON.stringify(databox, null, 2));
 
   const [isOpen, setIsOpen] = useState(false);
-
-
 
   return (
     <>
@@ -1096,7 +1095,7 @@ const koosDatabox = useBoxPlot(
                     if (label === "SURGERY" || !active || !payload?.length)
                       return null;
 
-                    console.log("PROM Payload"+payload);
+                    console.log("PROM Payload" + payload);
 
                     return (
                       <div className="bg-white p-2 border rounded shadow text-black">
@@ -1635,7 +1634,7 @@ const koosDatabox = useBoxPlot(
                   tick={{ fill: "#615E83", fontSize: 16, fontWeight: "500" }}
                   axisLine={{ stroke: "#615E83" }}
                   tickLine={{ stroke: "#615E83" }}
-                  domain={[0, 48]} 
+                  domain={[0, 48]}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -1794,7 +1793,7 @@ const koosDatabox = useBoxPlot(
                       item.Patient !== undefined &&
                       item.Patient !== null &&
                       !isNaN(item.Patient) &&
-                      item.Patient < 100 // Optional: clamp to a reasonable max, adjust as needed
+                      item.Patient <= 100 // Optional: clamp to a reasonable max, adjust as needed
                   )}
                   dataKey="Patient"
                   fill="#04CE00"
@@ -1839,7 +1838,7 @@ const koosDatabox = useBoxPlot(
                   tick={{ fill: "#615E83", fontSize: 16, fontWeight: "500" }}
                   axisLine={{ stroke: "#615E83" }}
                   tickLine={{ stroke: "#615E83" }}
-                  domain={[0, 100]} 
+                  domain={[0, 100]}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -2037,7 +2036,6 @@ const koosDatabox = useBoxPlot(
                   }}
                   axisLine={{ stroke: "#615E83" }}
                   tickLine={{ stroke: "#615E83" }}
-                  
                 />
 
                 <YAxis

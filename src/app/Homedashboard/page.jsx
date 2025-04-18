@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  Cell,
   ResponsiveContainer,
 } from "recharts";
 import { Poppins } from "next/font/google";
@@ -383,6 +384,15 @@ const page = ({ goToReport }) => {
   };
 
   const buckets = ["0-20", "20-40", "40-60", "60-80", "80-100"];
+
+  const bucketColors = {
+    "0-20": "#FF4C4C",    // red
+    "20-40": "#FF944C",   // orange
+    "40-60": "#FFD700",   // yellow
+    "60-80": "#A6E22E",   // light green
+    "80-100": "#04CE00",  // green
+  };
+  
 
   const getBucketLabel = (score) => {
     if (score < 20) return "0-20";
@@ -948,7 +958,15 @@ const page = ({ goToReport }) => {
                       }}
                     />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+  {bucketData().map((entry, index) => (
+    <Cell
+      key={`cell-${index}`}
+      fill={bucketColors[entry.name] || "#8884d8"}
+    />
+  ))}
+</Bar>
+
                   </BarChart>
                 </ResponsiveContainer>
               </div>

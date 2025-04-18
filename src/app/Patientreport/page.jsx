@@ -70,7 +70,7 @@ const computeBoxStats = (data, mean) => {
     median: quantile(sorted, 0.5),
     upperQuartile: quantile(sorted, 0.75),
     max: sorted[sorted.length - 1],
-    average: mean,
+    Patient: mean,
   };
 };
 
@@ -120,7 +120,7 @@ const useBoxPlot = (boxPlots) => {
         const lowerQuartile = !isNaN(v.lowerQuartile) ? v.lowerQuartile : null;
         const upperQuartile = !isNaN(v.upperQuartile) ? v.upperQuartile : null;
         const median = !isNaN(v.median) ? v.median : null;
-        const average = !isNaN(v.average) ? v.average : null;
+        const Patient = !isNaN(v.Patient) ? v.Patient : null;
 
         return {
           name: v.name,
@@ -140,7 +140,7 @@ const useBoxPlot = (boxPlots) => {
           medianLine: 0.0001, // dummy to render median bar
           maxLine: 0.0001, // dummy to render max bar
           minLine: 0.0001, // dummy to render min bar (optional)
-          average: average,
+          Patient: Patient,
           size: 250,
           _median: median, // actual Y position for rendering line
           _max: max,
@@ -486,12 +486,12 @@ const dataMCS = sf12Data
       const stats = computeBoxStats(item.boxData, item.dotValue);
   
       const isValidDot =
-        stats.average !== undefined &&
-        !isNaN(stats.average) &&
-        stats.average < 100;
+        stats.Patient !== undefined &&
+        !isNaN(stats.Patient) &&
+        stats.Patient < 100;
   
       if (!isValidDot) {
-        stats.average = undefined;
+        stats.Patient = undefined;
       }
   
       return {
@@ -551,12 +551,12 @@ const dataMCS = sf12Data
       const stats = computeBoxStats(item.boxData, item.dotValue);
   
       const isValidDot =
-        stats.average !== undefined &&
-        !isNaN(stats.average) &&
-        stats.average < 100;
+        stats.Patient !== undefined &&
+        !isNaN(stats.Patient) &&
+        stats.Patient < 100;
   
       if (!isValidDot) {
-        stats.average = undefined; // strip rogue dot
+        stats.Patient = undefined; // strip rogue dot
       }
   
       return {
@@ -619,12 +619,12 @@ const koosDatabox = useBoxPlot(
     const stats = computeBoxStats(item.boxData, item.dotValue);
 
     const isValidDot =
-      stats.average !== undefined &&
-      !isNaN(stats.average) &&
-      stats.average < 100;
+      stats.Patient !== undefined &&
+      !isNaN(stats.Patient) &&
+      stats.Patient < 100;
 
     if (!isValidDot) {
-      stats.average = undefined;
+      stats.Patient = undefined;
     }
 
     return {
@@ -684,12 +684,12 @@ const koosDatabox = useBoxPlot(
       const stats = computeBoxStats(item.boxData, item.dotValue);
   
       const isValidDot =
-        stats.average !== undefined &&
-        !isNaN(stats.average) &&
-        stats.average < 100;
+        stats.Patient !== undefined &&
+        !isNaN(stats.Patient) &&
+        stats.Patient < 100;
   
       if (!isValidDot) {
-        stats.average = undefined;
+        stats.Patient = undefined;
       }
   
       return {
@@ -769,7 +769,7 @@ const koosDatabox = useBoxPlot(
             topWhisker: null,
             median: null,
             max: null,
-            average: null,
+            Patient: null,
           };
 
       return {
@@ -1587,12 +1587,12 @@ const koosDatabox = useBoxPlot(
                 <Scatter
                   data={databox.filter(
                     (item) =>
-                      item.average !== undefined &&
-                      item.average !== null &&
-                      !isNaN(item.average) &&
-                      item.average < 100 // optional: clamp to realistic max
+                      item.Patient !== undefined &&
+                      item.Patient !== null &&
+                      !isNaN(item.Patient) &&
+                      item.Patient < 100 // optional: clamp to realistic max
                   )}
-                  dataKey="average"
+                  dataKey="Patient"
                   fill="#04CE00"
                   stroke="#04CE00"
                   shape={(props) => (
@@ -1790,12 +1790,12 @@ const koosDatabox = useBoxPlot(
                 <Scatter
                   data={sf12Databox.filter(
                     (item) =>
-                      item.average !== undefined &&
-                      item.average !== null &&
-                      !isNaN(item.average) &&
-                      item.average < 100 // Optional: clamp to a reasonable max, adjust as needed
+                      item.Patient !== undefined &&
+                      item.Patient !== null &&
+                      !isNaN(item.Patient) &&
+                      item.Patient < 100 // Optional: clamp to a reasonable max, adjust as needed
                   )}
-                  dataKey="average"
+                  dataKey="Patient"
                   fill="#04CE00"
                   stroke="#04CE00"
                   shape={(props) => (
@@ -2005,12 +2005,12 @@ const koosDatabox = useBoxPlot(
                 <Scatter
                   data={koosDatabox.filter(
                     (item) =>
-                      item.average !== undefined &&
-                      item.average !== null &&
-                      !isNaN(item.average) &&
-                      item.average < 100 // Optional: clamp to a reasonable max, adjust as needed
+                      item.Patient !== undefined &&
+                      item.Patient !== null &&
+                      !isNaN(item.Patient) &&
+                      item.Patient < 100 // Optional: clamp to a reasonable max, adjust as needed
                   )}
-                  dataKey="average"
+                  dataKey="Patient"
                   fill="#04CE00"
                   stroke="#04CE00"
                   shape={(props) => (
@@ -2213,12 +2213,12 @@ const koosDatabox = useBoxPlot(
                 <Scatter
                   data={kssDatabox.filter(
                     (item) =>
-                      item.average !== undefined &&
-                      item.average !== null &&
-                      !isNaN(item.average) &&
-                      item.average < 100 // Optional: clamp to a reasonable max, adjust as needed
+                      item.Patient !== undefined &&
+                      item.Patient !== null &&
+                      !isNaN(item.Patient) &&
+                      item.Patient < 100 // Optional: clamp to a reasonable max, adjust as needed
                   )}
-                  dataKey="average"
+                  dataKey="Patient"
                   fill="#04CE00"
                   stroke="#04CE00"
                   shape={(props) => (
@@ -2429,12 +2429,12 @@ const koosDatabox = useBoxPlot(
                 <Scatter
                   data={fjsDatabox.filter(
                     (item) =>
-                      item.average !== undefined &&
-                      item.average !== null &&
-                      !isNaN(item.average) &&
-                      item.average < 100 // Optional: clamp to a reasonable max, adjust as needed
+                      item.Patient !== undefined &&
+                      item.Patient !== null &&
+                      !isNaN(item.Patient) &&
+                      item.Patient < 100 // Optional: clamp to a reasonable max, adjust as needed
                   )}
-                  dataKey="average"
+                  dataKey="Patient"
                   fill="#04CE00"
                   stroke="#04CE00"
                   shape={(props) => (

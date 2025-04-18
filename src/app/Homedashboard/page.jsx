@@ -3,7 +3,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Image from "next/image";
-
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { Poppins } from "next/font/google";
 
 import Firstimepassreset from "@/app/Firsttimepasswordreset/page.jsx";
@@ -12,6 +19,8 @@ import ProfileImage from "@/app/assets/profile.png";
 import { UserIcon } from "@heroicons/react/24/outline";
 import { ChevronRightIcon, ArrowUpRightIcon } from "@heroicons/react/16/solid";
 import Patientimg from "@/app/assets/patimg.png";
+import Ascending from "@/app/assets/ascending.png";
+import Descending from "@/app/assets/descending.png";
 import Patcount from "@/app/assets/patcount.png";
 import Doccount from "@/app/assets/doccount.png";
 import Flag from "@/app/assets/flag.png";
@@ -74,14 +83,11 @@ const page = ({ goToReport }) => {
         // Attempt to log in again using the stored credentials
         const loginWithStoredUser = async () => {
           try {
-            const response = await axios.post(
-              API_URL+"login",
-              {
-                identifier: parsedUser.identifier,
-                password: parsedUser.password,
-                role: parsedUser.role, // Assuming role is stored and needed
-              }
-            );
+            const response = await axios.post(API_URL + "login", {
+              identifier: parsedUser.identifier,
+              password: parsedUser.password,
+              role: parsedUser.role, // Assuming role is stored and needed
+            });
 
             // Handle successful login response
             localStorage.setItem(
@@ -124,7 +130,7 @@ const page = ({ goToReport }) => {
 
       try {
         const res = await axios.get(
-          API_URL+`patients/by-doctor/${userData.user.email}`
+          API_URL + `patients/by-doctor/${userData.user.email}`
         );
         const data = res.data;
 
@@ -346,6 +352,77 @@ const page = ({ goToReport }) => {
     });
   });
 
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const handleSortClick = () => {
+    setSortAsc((prev) => !prev);
+    // Update your sorting logic here
+  };
+
+  const sortedPatients = [...filteredPatients].sort((a, b) => {
+    const getScore = (patient) =>
+      patient.questionnaire_scores?.find((score) =>
+        score.name?.toLowerCase().includes(scorefilter.toLowerCase())
+      )?.score?.[0] ?? "N/A";
+
+    const scoreA = getScore(a);
+    const scoreB = getScore(b);
+
+    const valA = isNaN(scoreA) ? -Infinity : parseFloat(scoreA);
+    const valB = isNaN(scoreB) ? -Infinity : parseFloat(scoreB);
+
+    return sortAsc ? valA - valB : valB - valA;
+  });
+
+  const scoreMaxValues = {
+    OKS: 48,
+    "SF-12": 100,
+    KOOS: 28,
+    KSS: 35,
+    FJS: 60,
+  };
+
+  const buckets = ["0-20", "20-40", "40-60", "60-80", "80-100"];
+
+  const getBucketLabel = (score) => {
+    if (score < 20) return "0-20";
+    if (score < 40) return "20-40";
+    if (score < 60) return "40-60";
+    if (score < 80) return "60-80";
+    return "80-100";
+  };
+
+  // Normalize and bucket data
+  const bucketData = () => {
+    const scoreCounts = {
+      "0-20": 0,
+      "20-40": 0,
+      "40-60": 0,
+      "60-80": 0,
+      "80-100": 0,
+    };
+
+    filteredPatients.forEach((patient) => {
+      const scoreObj = patient.questionnaire_scores?.find((s) =>
+        s.name?.toLowerCase().includes(scorefilter.toLowerCase())
+      );
+
+      const rawScore = scoreObj?.score?.[0];
+      const maxScore = scoreMaxValues[scorefilter] || 100;
+
+      if (rawScore != null && !isNaN(rawScore)) {
+        const normalizedScore = (parseFloat(rawScore) / maxScore) * 100;
+        const bucket = getBucketLabel(normalizedScore);
+        scoreCounts[bucket]++;
+      }
+    });
+
+    return buckets.map((bucket) => ({
+      name: bucket,
+      count: scoreCounts[bucket],
+    }));
+  };
+
   return (
     <>
       <div className="flex flex-col md:flex-row w-[95%] mx-auto mt-4 items-center justify-between">
@@ -445,27 +522,35 @@ const page = ({ goToReport }) => {
                 Patients
               </p>
 
-              <div
-                className={` bg-[#F5F5F5] rounded-lg py-0.5 px-[3px] w-fit border-2 border-[#191A1D] mt-[12px] ${
-                  width < 450 ? "grid grid-cols-3" : "flex"
-                }
-                ${width > 1000 && width / height > 1 ? "gap-1" : "gap-2"}`}
-              >
-                {scoreoptions.map((option) => (
-                  <div
-                    key={option}
-                    onClick={() => setscoreFitler(option)}
-                    className={`px-2 py-1 cursor-pointer text-xs font-semibold transition-all duration-200 rounded-lg
-            ${
-              scorefilter === option
-                ? "bg-gradient-to-b from-[#484E56] to-[#3B4048] text-white shadow-md"
-                : "text-gray-500"
-            }
-          `}
-                  >
-                    {option}
-                  </div>
-                ))}
+              <div className="flex items-center justify-between w-full">
+                <div
+                  className={`bg-[#F5F5F5] rounded-lg py-0.5 px-[3px] w-fit border-2 border-[#191A1D] mt-[12px] 
+      ${width < 450 ? "grid grid-cols-3" : "flex"} 
+      ${width > 1000 && width / height > 1 ? "gap-1" : "gap-2"}`}
+                >
+                  {scoreoptions.map((option) => (
+                    <div
+                      key={option}
+                      onClick={() => setscoreFitler(option)}
+                      className={`px-2 py-1 cursor-pointer text-xs font-semibold transition-all duration-200 rounded-lg
+          ${
+            scorefilter === option
+              ? "bg-gradient-to-b from-[#484E56] to-[#3B4048] text-white shadow-md"
+              : "text-gray-500"
+          }`}
+                    >
+                      {option}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Sort icon on the same line */}
+                <Image
+                  src={sortAsc ? Ascending : Descending}
+                  alt="Sort"
+                  className="ml-3 w-5 h-5 cursor-pointer mt-[12px]"
+                  onClick={handleSortClick}
+                />
               </div>
             </div>
 
@@ -552,7 +637,7 @@ const page = ({ goToReport }) => {
                 : "h-[82.8%]"
             }`}
           >
-            {filteredPatients.map((patient) => (
+            {sortedPatients.map((patient) => (
               <div
                 key={patient.uhid}
                 style={{ backgroundColor: "rgba(0, 85, 133, 0.1)" }}
@@ -823,265 +908,50 @@ const page = ({ goToReport }) => {
               width < 1000 ? "h-fit" : "h-[60%]"
             }`}
           >
-            <div className="w-full h-full bg-white shadow-md rounded-xl flex flex-col gap-2 items-center justify-start p-3">
-              <div className="w-full flex flex-row justify-between items-center">
+            <div className="w-full h-full bg-white shadow-md rounded-xl flex flex-col gap-4 items-center justify-start p-3">
+              <div className="w-full flex flex-row justify-between items-center mb-4">
+                {" "}
+                {/* Added margin bottom for space */}
                 <p
-                  className={`text-black  font-semibold ${
+                  className={`text-black font-semibold ${
                     width > 1000 && width / height > 1 ? "text-sm" : "text-lg"
                   }`}
                 >
-                  Patients Progress
+                  Patients Progress - {scorefilter}
                 </p>
-                <div
-                  className="relative cursor-pointer"
-                  onClick={openDatePicker}
-                >
-                  <input
-                    type="date"
-                    ref={dateInputRef}
-                    onChange={handleDateChange}
-                    className="absolute opacity-0 pointer-events-none"
-                  />
-                  <p
-                    className={`font-medium text-center min-w-[100px] ${
-                      selectedDate === "Today" || selectedDate === ""
-                        ? "text-[#60F881]"
-                        : "text-black"
-                    }
-                    ${
-                      width > 1000 && width / height > 1 ? "text-sm" : "text-lg"
-                    }`}
-                  >
-                    {selectedDate || "Today"}
-                  </p>
-                </div>
               </div>
 
-              {width >= 1272 && (
-                <div className="w-full h-[90%] flex flex-row justify-start gap-2">
-                  <div className="justify-start grid grid-cols-2  w-5/6 h-full overflow-y-scroll flex-grow ">
-                    {displayedPatients.map((item, index) => (
-                      <div
-                        key={index}
-                        className={`w-[100px] h-37 bg-white shadow-md rounded-xl p-2.5 m-2 relative flex flex-col justify-between 
-                          ${
-                            item.questionnaire_assigned?.filter(
-                              (q) => q.completed === 0
-                            ).length > 0
-                              ? "shadow-lg shadow-red-500"
-                              : "shadow-md shadow-gray-300"
-                          }`}
-                      >
-                        {/* Patient Name */}
-                        <p className="text-[#475467] text-base font-medium text-center mt-3">
-                          {item.first_name + " " + item.last_name}
-                        </p>
-
-                        {/* Status */}
-                        <p className="text-gray-400 text-sm font-medium text-center">
-                          {item.current_status}
-                        </p>
-
-                        {/* Completed */}
-                        <div className="mt-3 flex justify-end items-center gap-2">
-                          <p className="text-black text-[10px] font-semibold">
-                            COMPLETED
-                          </p>
-                          <p className="text-green-500 text-sm font-bold">
-                            {item.questionnaire_assigned?.filter(
-                              (q) => q.completed === 1
-                            ).length || 0}
-                          </p>
-                        </div>
-
-                        {/* Pending */}
-                        <div className="flex justify-end items-center gap-2">
-                          <p className="text-black text-[10px] font-semibold">
-                            PENDING
-                          </p>
-                          <p className="text-orange-400 text-sm font-bold">
-                            {item.questionnaire_assigned?.filter(
-                              (q) => q.completed === 0
-                            ).length || 0}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="w-1/6 ">
-                    <div className="flex flex-col items-center bg-[#1E1E1E] rounded-md py-1.5 gap-3">
-                      {patprogressoptions.map((option) => (
-                        <button
-                          key={option}
-                          className={`w-3/4 h-full p-1.5 text-white text-[10px] font-semibold rounded-md flex items-center justify-center transition-all cursor-pointer ${
-                            patprogressfilter === option
-                              ? "bg-gradient-to-b from-[#484E56] to-[#3B4048] shadow-md"
-                              : "bg-transparent"
-                          }`}
-                          onClick={() => setpatprogressFilter(option)}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-              {width < 1272 && width >= 1000 && width / height > 1 && (
-                <div className="w-full h-[90%] flex flex-col justify-start gap-2">
-                  <div className="w-full ">
-                    <div className="flex flex-row items-center bg-[#1E1E1E] rounded-md py-1 px-2 gap-3">
-                      {patprogressoptions.map((option) => (
-                        <button
-                          key={option}
-                          className={`w-1/2 h-full p-1.5 text-white text-[10px] font-semibold rounded-md flex items-center justify-center transition-all cursor-pointer ${
-                            patprogressfilter === option
-                              ? "bg-gradient-to-b from-[#484E56] to-[#3B4048] shadow-md"
-                              : "bg-transparent"
-                          }`}
-                          onClick={() => setpatprogressFilter(option)}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="justify-center grid grid-cols-2  w-full h-full overflow-y-scroll flex-grow ">
-                    {displayedPatients.map((item, index) => (
-                      <div
-                        key={index}
-                        className={`w-[100px] h-37 bg-white shadow-md rounded-xl p-2.5 m-1 relative flex flex-col justify-between 
-                              ${
-                                item.pending > 0
-                                  ? "shadow-lg shadow-red-500"
-                                  : "shadow-md shadow-gray-300"
-                              }`}
-                      >
-                        {/* Top Right Arrow Icon */}
-                        {item.pending > 0 && (
-                          <ArrowUpRightIcon
-                            color="blue"
-                            className="w-4 h-4 top-2 right-2 absolute"
-                          />
-                        )}
-
-                        {/* Patient Name */}
-                        <p className="text-[#475467] text-base font-medium text-center mt-3">
-                          {item.first_name + " " + item.last_name}
-                        </p>
-
-                        {/* Status */}
-                        <p className="text-gray-400 text-sm font-medium text-center">
-                          {item.current_status}
-                        </p>
-
-                        {/* Completed */}
-                        <div className="mt-3 flex justify-end items-center gap-2">
-                          <p className="text-black text-[10px] font-semibold">
-                            COMPLETED
-                          </p>
-                          <p className="text-green-500 text-sm font-bold">
-                            {item.questionnaire_assigned?.filter(
-                              (q) => q.completed === 1
-                            ).length || 0}
-                          </p>
-                        </div>
-
-                        {/* Pending */}
-                        <div className="flex justify-end items-center gap-2">
-                          <p className="text-black text-[10px] font-semibold">
-                            PENDING
-                          </p>
-                          <p className="text-orange-400 text-sm font-bold">
-                            {item.questionnaire_assigned?.filter(
-                              (q) => q.completed === 0
-                            ).length || 0}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {(width <= 1000 || (width > 1000 && width / height <= 1)) && (
-                <div className="w-full h-[90%] flex flex-col justify-start gap-2">
-                  <div className="w-full ">
-                    <div className="flex flex-row items-center bg-[#1E1E1E] rounded-md py-1 px-2 gap-3">
-                      {patprogressoptions.map((option) => (
-                        <button
-                          key={option}
-                          className={`w-1/2 h-full p-1.5 text-white text-[10px] font-semibold rounded-md flex items-center justify-center transition-all cursor-pointer ${
-                            patprogressfilter === option
-                              ? "bg-gradient-to-b from-[#484E56] to-[#3B4048] shadow-md"
-                              : "bg-transparent"
-                          }`}
-                          onClick={() => setpatprogressFilter(option)}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-row overflow-x-scroll w-full h-full p-2 space-x-5">
-                    {displayedPatients.map((item, index) => (
-                      <div
-                        key={index}
-                        className={`min-w-[140px] bg-white shadow-md rounded-xl p-2.5 relative flex flex-col justify-between 
-                        ${
-                          item.pending > 0
-                            ? "shadow-lg shadow-red-500"
-                            : "shadow-md shadow-gray-300"
-                        }`}
-                      >
-                        {/* Top Right Arrow Icon */}
-                        {item.pending > 0 && (
-                          <ArrowUpRightIcon
-                            color="blue"
-                            className="w-4 h-4 top-2 right-2 absolute"
-                          />
-                        )}
-
-                        {/* Patient Name */}
-                        <p className="text-[#475467] text-base font-medium text-center mt-3">
-                          {item.first_name + " " + item.last_name}
-                        </p>
-
-                        {/* Status */}
-                        <p className="text-gray-400 text-sm font-medium text-center">
-                          {item.current_status}
-                        </p>
-
-                        {/* Completed */}
-                        <div className="mt-3 flex justify-end items-center gap-2">
-                          <p className="text-black text-[10px] font-semibold">
-                            COMPLETED
-                          </p>
-                          <p className="text-green-500 text-sm font-bold">
-                            {item.questionnaire_assigned?.filter(
-                              (q) => q.completed === 1
-                            ).length || 0}
-                          </p>
-                        </div>
-
-                        {/* Pending */}
-                        <div className="flex justify-end items-center gap-2">
-                          <p className="text-black text-[10px] font-semibold">
-                            PENDING
-                          </p>
-                          <p className="text-orange-400 text-sm font-bold">
-                            {item.questionnaire_assigned?.filter(
-                              (q) => q.completed === 0
-                            ).length || 0}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Ensuring responsiveness for the chart */}
+              <div className="w-full" style={{ height: "60vh" }}>
+                {" "}
+                {/* Height as a percentage of the viewport height */}
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={bucketData()}>
+                    <XAxis
+                      dataKey="name"
+                      label={{
+                        value: "Scores",
+                        position: "insideBottom",
+                        offset: 0,
+                        fontSize: 14,
+                        fontWeight: "bold", // Make the text bold
+                      }}
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      label={{
+                        value: "Total Patients",
+                        angle: -90,
+                        position: "center",
+                        fontSize: 14,
+                        fontWeight: "bold", // Make the text bold
+                      }}
+                    />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>

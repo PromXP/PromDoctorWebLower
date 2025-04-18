@@ -1635,6 +1635,7 @@ const koosDatabox = useBoxPlot(
                   tick={{ fill: "#615E83", fontSize: 16, fontWeight: "500" }}
                   axisLine={{ stroke: "#615E83" }}
                   tickLine={{ stroke: "#615E83" }}
+                  domain={[0, 48]} 
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -1838,6 +1839,7 @@ const koosDatabox = useBoxPlot(
                   tick={{ fill: "#615E83", fontSize: 16, fontWeight: "500" }}
                   axisLine={{ stroke: "#615E83" }}
                   tickLine={{ stroke: "#615E83" }}
+                  domain={[0, 100]} 
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -2054,7 +2056,7 @@ const koosDatabox = useBoxPlot(
                   tick={{ fill: "#615E83", fontSize: 16, fontWeight: "500" }}
                   axisLine={{ stroke: "#615E83" }}
                   tickLine={{ stroke: "#615E83" }}
-                  domain={[0, 100]} // Set domain to match your data range
+                  domain={[0, 28]} // Set domain to match your data range
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -2476,7 +2478,7 @@ const koosDatabox = useBoxPlot(
                   tick={{ fill: "#615E83", fontSize: 16, fontWeight: "500" }}
                   axisLine={{ stroke: "#615E83" }}
                   tickLine={{ stroke: "#615E83" }}
-                  domain={[0, 100]} // Set domain to match your data range
+                  domain={[0, 60]} // Set domain to match your data range
                 />
               </ComposedChart>
             </ResponsiveContainer>

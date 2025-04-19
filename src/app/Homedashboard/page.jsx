@@ -128,50 +128,50 @@ const page = ({ goToReport }) => {
   useEffect(() => {
     const fetchPatients = async () => {
       if (!userData?.user?.email) return;
-
+  
       try {
         const res = await axios.get(
           API_URL + `patients/by-doctor/${userData.user.email}`
         );
         const data = res.data;
-
+  
         setPatients(data);
-
-        const preOp = data.filter((patient) =>
-          patient.questionnaire_assigned?.some(
-            (q) => q.period?.toLowerCase() === "pre op"
-          )
+        console.log(data);
+  
+        // Count PRE OP patients based on current_status
+        const preOp = data.filter(
+          (patient) => patient.current_status?.toLowerCase() === "pre op"
         ).length;
         setPreOpCount(preOp);
-
+  
+        // Count POST OP stage patients
         const stageCounts = {
-          "3W": 0,
           "6W": 0,
           "3M": 0,
           "6M": 0,
           "1Y": 0,
           "2Y": 0,
         };
-
+  
         data.forEach((patient) => {
           const status = patient.current_status?.toUpperCase();
           if (stageCounts.hasOwnProperty(status)) {
             stageCounts[status]++;
           }
         });
-
+  
         setPostOpStages(stageCounts);
         setPostOpTotal(
           Object.values(stageCounts).reduce((sum, val) => sum + val, 0)
         );
-
-        // 🔽 Grouping Scores Logic
+  
+        // Grouping Scores Logic
         const scoreGroups = {};
         data.forEach((patient) => {
           patient.questionnaire_scores?.forEach((q1) => {
             const key = `${q1.name}|${q1.period}`;
             if (!scoreGroups[key]) scoreGroups[key] = [];
-
+  
             data.forEach((otherPatient) => {
               otherPatient.questionnaire_scores?.forEach((q2) => {
                 if (q2.name.includes(q1.name) && q2.period === q1.period) {
@@ -182,23 +182,23 @@ const page = ({ goToReport }) => {
             });
           });
         });
-
+  
         // Remove duplicates
         for (const key in scoreGroups) {
           scoreGroups[key] = Array.from(new Set(scoreGroups[key]));
         }
-
+  
         console.log("Grouped Scores (name|period):", scoreGroups);
-
-        // ✅ Store in state
+  
         setScoreGroups(scoreGroups);
       } catch (err) {
         console.error("Failed to fetch patients", err);
       }
     };
-
+  
     fetchPatients();
   }, [userData?.user?.email]);
+  
 
   const makeVip = (id) => {
     const updatedPatients = patients.map((patient) =>

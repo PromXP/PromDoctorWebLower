@@ -236,7 +236,7 @@ const page = ({ goToReport }) => {
 
   const options = ["All PATIENTS", "PRE OPERATIVE", "POST OPERATIVE"];
 
-  const postopoptions = ["ALL", "3W", "6W", "3M", "6M", "1Y", "2Y"];
+  const postopoptions = ["ALL", "6W", "3M", "6M", "1Y", "2Y"];
 
   const [postopfilter, setpostopFitler] = useState("ALL");
 
